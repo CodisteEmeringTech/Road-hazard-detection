@@ -156,7 +156,7 @@ If no potholes are detected, return pothole_count as 0 and potholes as an empty 
 
 Respond ONLY with the JSON object - no additional text.`;
 
-const nerPrompt = `You are a smart NER extraction AI. Extract structured information from the following user description:
+const nerPrompt = `You are a smart NER extraction AI. Extract structured information from the following user description and please make sure you return the text in same language
 
 Description: "${description}"
 
