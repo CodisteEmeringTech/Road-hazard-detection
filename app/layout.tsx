@@ -7,8 +7,8 @@ import { ThemeProvider } from "@/components/theme-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "Codiste - Road Inspecter AI",
-  description: "Upload an image and let AI describe what it sees",
+  title: "Complainr Routing",
+  description: "Complainr Routing",
 }
 
 export default function RootLayout({
