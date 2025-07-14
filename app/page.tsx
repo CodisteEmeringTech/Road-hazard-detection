@@ -456,8 +456,8 @@ export default function ImageAnalyzer() {
                             <div className="w-2 h-2 bg-[#0a1e46] dark:bg-[#e6f3fc] rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
                             <div className="w-2 h-2 bg-[#0a1e46] dark:bg-[#e6f3fc] rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                           </div>
-                          <p className="text-lg font-medium text-[#0a1e46] dark:text-[#e6f3fc]">AI Analyzing Road Conditions...</p>
-                          <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Detecting damage, garbage, obstacles & hazards</p>
+                          <p className="text-lg font-medium text-[#0a1e46] dark:text-[#e6f3fc]">Analyzing...</p>
+                          <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Detecting damage, garbage, obstacles, hazards etc</p>
                         </div>
                       </div>
                     </div>
