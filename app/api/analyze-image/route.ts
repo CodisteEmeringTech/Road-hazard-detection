@@ -225,24 +225,24 @@ Respond ONLY with the JSON object.`
     }
 
     // Try to parse JSON to validate structure
-    try {
-      const parsedAnalysis = JSON.parse(analysis);
+    // try {
+    //   const parsedAnalysis = JSON.parse(analysis);
 
-      // Return same structure with user_context appended
-      const enhancedResponse = {
-        analysis: parsedAnalysis, // preserves your existing markdown compatibility
-        metadata: {
-          timestamp: new Date().toISOString(),
-          image_size: image.size,
-        },
-        user_context: {
-          description: userResponse.choices[0]?.message?.content || null,
-        },
-      };
+    //   // Return same structure with user_context appended
+    //   const enhancedResponse = {
+    //     analysis: parsedAnalysis, // preserves your existing markdown compatibility
+    //     metadata: {
+    //       timestamp: new Date().toISOString(),
+    //       image_size: image.size,
+    //     },
+    //     user_context: {
+    //       description: userResponse.choices[0]?.message?.content || null,
+    //     },
+    //   };
 
-      return NextResponse.json(enhancedResponse);
-    } catch (parseError) {
-      console.error("Failed to parse analysis JSON:", parseError);
+    //   return NextResponse.json(enhancedResponse);
+    // } catch (parseError) {
+    //   console.error("Failed to parse analysis JSON:", parseError);
       // Return raw analysis if JSON parsing fails
       return NextResponse.json({
         analysis,
@@ -251,7 +251,7 @@ Respond ONLY with the JSON object.`
           description: userResponse.choices[0]?.message?.content || null,
         },
       });
-    }
+    // }
   } catch (error: any) {
     console.error("Detailed error analyzing image:", error);
 
