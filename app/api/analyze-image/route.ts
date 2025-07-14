@@ -163,8 +163,8 @@ Description: "${description}"
 Return JSON with:
 {
   "complaint_type": "if any complaint type detected else null",
-  "locations": ["list of location entities detected, else empty"],
-  "persons": ["list of person names detected, else empty"],
+  "location": ["list of location entities detected, else empty"],
+  "person": ["list of person names detected, else empty"],
   "other_entities": ["other relevant entities, else empty"]
 }
 
