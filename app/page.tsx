@@ -49,6 +49,8 @@ export default function ImageAnalyzer() {
   const [error, setError] = useState<string | null>(null)
   const [isRightPanelMaximized, setIsRightPanelMaximized] = useState(false)
   const [mounted, setMounted] = useState(false)
+  const [userDetails, setUserDetails] = useState('');
+  const [userContext, setUserContext] = useState<any>(null)
   const { theme, setTheme } = useTheme()
 
   // Prevent hydration mismatch
@@ -95,15 +97,14 @@ export default function ImageAnalyzer() {
     try {
       const formData = new FormData()
       formData.append("image", uploadedImage)
-
-      console.log("Sending request to analyze image...")
+      if (userDetails.trim()) {
+        formData.append("description", userDetails.trim())
+      }
 
       const response = await fetch("/api/analyze-image", {
         method: "POST",
         body: formData,
       })
-
-      console.log("Response status:", response.status)
 
       const contentType = response.headers.get("content-type")
       if (!contentType || !contentType.includes("application/json")) {
@@ -113,7 +114,6 @@ export default function ImageAnalyzer() {
       }
 
       const data = await response.json()
-      console.log("Response data:", data)
 
       if (!response.ok) {
         throw new Error(data.error || `Server error: ${response.status}`)
@@ -146,6 +146,7 @@ export default function ImageAnalyzer() {
       }
       
       setParsedAnalysis(parsedData)
+      setUserContext(data?.user_context)
     } catch (error) {
       console.error("Error analyzing image:", error)
 
@@ -174,32 +175,32 @@ export default function ImageAnalyzer() {
   // Helper functions for dynamic styling
   const getSeverityColor = (severity: string) => {
     switch (severity) {
-      case 'critical': return 'bg-red-100 text-red-800 border-red-200 dark:bg-red-900/30 dark:text-red-200 dark:border-red-700'
-      case 'severe': return 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/30 dark:text-orange-200 dark:border-orange-700'
-      case 'moderate': return 'bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-700'
-      case 'minor': return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-200 dark:border-green-700'
-      default: return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-900/30 dark:text-gray-200 dark:border-gray-700'
+      case 'critical': return 'bg-[#e6f3fc] text-[#0a1e46] border-[#e6f3fc] dark:bg-[#0a1e46]/30 dark:text-[#e6f3fc] dark:border-[#545454]'
+      case 'severe': return 'bg-[#e6f3fc] text-[#0a1e46] border-[#e6f3fc] dark:bg-[#0a1e46]/30 dark:text-[#e6f3fc] dark:border-[#545454]'
+      case 'moderate': return 'bg-[#e6f3fc] text-[#0a1e46] border-[#e6f3fc] dark:bg-[#0a1e46]/30 dark:text-[#e6f3fc] dark:border-[#545454]'
+      case 'minor': return 'bg-[#e6f3fc] text-[#0a1e46] border-[#e6f3fc] dark:bg-[#0a1e46]/30 dark:text-[#e6f3fc] dark:border-[#545454]'
+      default: return 'bg-[#e6f3fc] text-[#0a1e46] border-[#e6f3fc] dark:bg-[#0a1e46]/30 dark:text-[#e6f3fc] dark:border-[#545454]'
     }
   }
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'immediate': return 'bg-red-500 text-white'
-      case 'within_24h': return 'bg-orange-500 text-white'
-      case 'within_week': return 'bg-yellow-500 text-white'
-      case 'routine_maintenance': return 'bg-blue-500 text-white'
-      default: return 'bg-gray-500 text-white'
+      case 'immediate': return 'bg-[#0a1e46] text-[#ffffff]'
+      case 'within_24h': return 'bg-[#0a1e46] text-[#ffffff]'
+      case 'within_week': return 'bg-[#0a1e46] text-[#ffffff]'
+      case 'routine_maintenance': return 'bg-[#0a1e46] text-[#ffffff]'
+      default: return 'bg-[#0a1e46] text-[#ffffff]'
     }
   }
 
   const getConditionColor = (condition: string) => {
     switch (condition) {
-      case 'excellent': return 'text-green-600 dark:text-green-400'
-      case 'good': return 'text-blue-600 dark:text-blue-400'
-      case 'fair': return 'text-yellow-600 dark:text-yellow-400'
-      case 'poor': return 'text-orange-600 dark:text-orange-400'
-      case 'dangerous': return 'text-red-600 dark:text-red-400'
-      default: return 'text-gray-600 dark:text-gray-400'
+      case 'excellent': return 'text-[#0a1e46] dark:text-[#e6f3fc]'
+      case 'good': return 'text-[#0a1e46] dark:text-[#e6f3fc]'
+      case 'fair': return 'text-[#0a1e46] dark:text-[#e6f3fc]'
+      case 'poor': return 'text-[#0a1e46] dark:text-[#e6f3fc]'
+      case 'dangerous': return 'text-[#0a1e46] dark:text-[#e6f3fc]'
+      default: return 'text-[#0a1e46] dark:text-[#e6f3fc]'
     }
   }
 
@@ -220,6 +221,43 @@ export default function ImageAnalyzer() {
     return "";
   }
 
+  // Helper to render user context details in a general way
+  function renderUserContext(userContext: any) {
+    // If userContext has a 'description' field that is a JSON string (possibly with code block markers), parse it
+    let parsed = userContext;
+    if (typeof userContext?.description === 'string') {
+      let desc = userContext.description.trim();
+      if (desc.startsWith('```json')) desc = desc.replace(/^```json/, '').replace(/```$/, '').trim();
+      else if (desc.startsWith('```')) desc = desc.replace(/^```/, '').replace(/```$/, '').trim();
+      try {
+        parsed = JSON.parse(desc);
+      } catch {
+        // fallback: show as string
+        parsed = { description: userContext.description };
+      }
+    }
+    if (typeof parsed !== 'object' || !parsed) return null;
+    const entries = Object.entries(parsed).filter(([_, v]) => v != null && v !== '');
+    if (entries.length === 0) return null;
+    return (
+      <div className="mt-8 bg-[#e6f3fc] dark:bg-[#0a1e46]/30 border border-[#e6f3fc] dark:border-[#545454] rounded-xl p-4">
+        <h4 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-2">Complaint Details</h4>
+        <dl className="divide-y divide-[#e6f3fc] dark:divide-[#545454]">
+          {entries.map(([key, value]) => (
+            <div key={key} className="py-2 flex flex-col md:flex-row md:items-center md:gap-2">
+              <dt className="font-medium text-[#0a1e46] dark:text-[#e6f3fc] capitalize min-w-[120px]">
+                {key.replace(/_/g, ' ')}:
+              </dt>
+              <dd className="text-[#0a1e46] dark:text-[#e6f3fc] whitespace-pre-line break-words flex-1">
+                {Array.isArray(value) ? value.join(', ') : typeof value === 'string' ? value : JSON.stringify(value, null, 2)}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+    );
+  }
+
   // Don't render theme-dependent content until mounted
   if (!mounted) {
     return (
@@ -230,15 +268,15 @@ export default function ImageAnalyzer() {
   }
 
   return (
-    <div className="h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-blue-900 flex flex-col overflow-hidden transition-colors duration-300">
+    <div className="h-screen bg-gradient-to-br from-[#e6f3fc] via-[#f8fbff] to-[#bcdcf6] dark:from-[#1a2747] dark:via-[#232b3b] dark:to-[#0a1e46] flex flex-col overflow-hidden transition-colors duration-300">
       {/* Header */}
       <div className="flex-shrink-0 py-8 px-4 relative">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-lg" />
             <div className="inline-flex items-center gap-2">
-              <h1 className="text-2xl font-bold">
-                Road Inspector AI
+              <h1 className="text-2xl font-bold text-[#0a1e46] dark:text-[#e6f3fc]">
+                Complainr Routing
               </h1>
             </div>
           </div>
@@ -247,12 +285,12 @@ export default function ImageAnalyzer() {
               variant="outline"
               size="icon"
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="border-red-200 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-gray-700 transition-all duration-200"
+              className="border-[#e6f3fc] dark:border-[#545454] hover:bg-[#e6f3fc] dark:hover:bg-[#545454] transition-all duration-200"
             >
               {theme === "dark" ? (
-                <Sun className="h-4 w-4 text-yellow-500 transition-transform duration-200 rotate-0 scale-100" />
+                <Sun className="h-4 w-4 text-[#e6f3fc] transition-transform duration-200 rotate-0 scale-100" />
               ) : (
-                <Moon className="h-4 w-4 text-red-600 transition-transform duration-200 rotate-0 scale-100" />
+                <Moon className="h-4 w-4 text-[#0a1e46] transition-transform duration-200 rotate-0 scale-100" />
               )}
             </Button>
           </div>
@@ -274,14 +312,24 @@ export default function ImageAnalyzer() {
                 : "opacity-100 scale-100 pointer-events-auto relative z-10"
             }`}
           >
-            <Card className="flex-1 overflow-hidden border-2 border-dashed border-red-200 dark:border-gray-600 hover:border-red-300 dark:hover:border-red-500 transition-all duration-300 bg-white/30 dark:bg-gray-900/30 backdrop-blur-lg">
+            <div className="mb-4">
+              <label htmlFor="user-details" className="block text-sm font-medium text-[#0a1e46] dark:text-[#e6f3fc] mb-1">Your Name & Complaint (optional)</label>
+              <textarea
+                id="user-details"
+                className="w-full rounded-lg border border-[#0a1e46] dark:border-[#545454] bg-[#ffffff]/60 dark:bg-[#0a1e46]/60 p-2 text-sm text-[#0a1e46] dark:text-[#e6f3fc] focus:outline-none focus:ring-2 focus:ring-[#0a1e46] resize-none min-h-[60px]"
+                placeholder="Enter your name and message (e.g., 'John Doe: Reporting a large pothole near the school gate')"
+                value={userDetails}
+                onChange={e => setUserDetails(e.target.value)}
+              />
+            </div>
+            <Card className="flex-1 overflow-hidden border-2 border-dashed border-[#0a1e46] dark:border-[#545454] hover:border-[#0a1e46] dark:hover:border-[#0a1e46] transition-all duration-300 bg-[#ffffff]/30 dark:bg-[#0a1e46]/30 backdrop-blur-lg">
               <CardContent className="p-0 h-full">
                 <div
                   {...getRootProps()}
                   className={`relative p-12 text-center cursor-pointer transition-all duration-300 h-full flex flex-col justify-center ${
                     isDragActive
-                      ? "bg-red-50 dark:bg-red-900/20 border-red-400 dark:border-red-500 scale-[1.02]"
-                      : "hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                      ? "bg-[#0a1e46] dark:bg-[#0a1e46]/20 border-[#0a1e46] dark:border-[#0a1e46] scale-[1.02]"
+                      : "hover:bg-[#e6f3fc] dark:hover:bg-[#545454]/50"
                   }`}
                 >
                   <input {...getInputProps()} />
@@ -300,34 +348,34 @@ export default function ImageAnalyzer() {
                             e.stopPropagation()
                             clearImage()
                           }}
-                          className="absolute top-2 right-2 w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
+                          className="absolute top-2 right-2 w-8 h-8 bg-[#0a1e46] hover:bg-[#0a1e46] text-[#ffffff] rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200 shadow-lg"
                         >
                           <X className="w-4 h-4" />
                         </button>
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">Click to replace or drag a new image</p>
+                      <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Click to replace or drag a new image</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <div
-                        className={`mx-auto w-16 h-16 rounded-full bg-gradient-to-r from-red-100 to-rose-100 dark:from-red-900/50 dark:to-rose-900/50 flex items-center justify-center transition-transform duration-300 ${
+                        className={`mx-auto w-16 h-16 rounded-full bg-gradient-to-r from-[#0a1e46] to-[#e6f3fc] dark:from-[#0a1e46]/50 dark:to-[#e6f3fc]/50 flex items-center justify-center transition-transform duration-300 ${
                           isDragActive ? "scale-110" : ""
                         }`}
                       >
                         <Upload
-                          className={`w-8 h-8 text-red-600 dark:text-red-400 transition-transform duration-300 ${
+                          className={`w-8 h-8 text-[#0a1e46] dark:text-[#e6f3fc] transition-transform duration-300 ${
                             isDragActive ? "scale-110" : ""
                           }`}
                         />
                       </div>
                       <div>
-                        <p className="text-lg font-medium text-gray-700 dark:text-gray-200 mb-2">
+                        <p className="text-lg font-medium text-[#0a1e46] dark:text-[#e6f3fc] mb-2">
                           {isDragActive ? "Drop your road image here" : "Upload Road Image for Analysis"}
                         </p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                        <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">
                           Potholes • Garbage • Obstacles • Infrastructure Issues
                         </p>
-                        <p className="text-xs text-gray-400 dark:text-gray-500 mt-2">
+                        <p className="text-xs text-[#0a1e46] dark:text-[#e6f3fc] mt-2">
                           PNG, JPG, GIF up to 10MB
                         </p>
                       </div>
@@ -342,7 +390,7 @@ export default function ImageAnalyzer() {
                 <Button
                   onClick={analyzeImage}
                   disabled={isAnalyzing}
-                  className="w-full h-12 bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700 dark:from-red-500 dark:to-rose-500 dark:hover:from-red-600 dark:hover:to-rose-600 text-white font-medium rounded-lg transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100"
+                  className="w-full h-12 bg-gradient-to-r from-[#0a1e46] to-[#e6f3fc] hover:from-[#0a1e46] hover:to-[#e6f3fc] dark:from-[#0a1e46] dark:to-[#e6f3fc] dark:hover:from-[#0a1e46] dark:hover:to-[#e6f3fc] text-[#ffffff] font-medium rounded-lg transition-all duration-300 transform hover:scale-[1.02] disabled:scale-100"
                 >
                   {isAnalyzing ? (
                     <>
@@ -366,69 +414,69 @@ export default function ImageAnalyzer() {
               isRightPanelMaximized ? "col-span-1 scale-100 opacity-100" : "scale-100 opacity-100"
             }`}
           >
-            <Card className="flex-1 border-none bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm flex flex-col min-h-0">
-              <CardContent className="p-6 rounded-xl border-red-100 dark:border-gray-700 border flex-1 flex flex-col min-h-0">
+            <Card className="flex-1 border-none bg-[#ffffff]/80 dark:bg-[#545454]/80 backdrop-blur-sm flex flex-col min-h-0">
+              <CardContent className="p-6 rounded-xl border-[#e6f3fc] dark:border-[#545454] border flex-1 flex flex-col min-h-0">
                 <div className="flex items-center justify-between mb-6 flex-shrink-0">
                   <div className="flex items-center gap-2">
-                    <ImageIcon className="w-6 h-6 text-red-600 dark:text-red-400" />
-                    <h2 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Road Analysis Report</h2>
+                    <ImageIcon className="w-6 h-6 text-[#0a1e46] dark:text-[#e6f3fc]" />
+                    <h2 className="text-xl font-semibold text-[#0a1e46] dark:text-[#e6f3fc]">Analysis Report</h2>
                   </div>
                   <Button
                     variant="outline"
                     size="icon"
                     onClick={toggleRightPanel}
-                    className="border-red-200 dark:border-gray-600 hover:bg-red-50 dark:hover:bg-gray-700 bg-transparent transition-all duration-200 hover:scale-105"
+                    className="border-[#0a1e46] dark:border-[#545454] hover:bg-[#e6f3fc] dark:hover:bg-[#545454] bg-transparent transition-all duration-200 hover:scale-105"
                   >
                     <div className="transition-transform duration-300">
                       {isRightPanelMaximized ? (
-                        <Minimize2 className="h-4 w-4 text-red-600 dark:text-red-400 transition-transform duration-300 rotate-0" />
+                        <Minimize2 className="h-4 w-4 text-[#0a1e46] dark:text-[#e6f3fc] transition-transform duration-300 rotate-0" />
                       ) : (
-                        <Maximize2 className="h-4 w-4 text-red-600 dark:text-red-400 transition-transform duration-300 rotate-0" />
+                        <Maximize2 className="h-4 w-4 text-[#0a1e46] dark:text-[#e6f3fc] transition-transform duration-300 rotate-0" />
                       )}
                     </div>
                   </Button>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-red-300 dark:scrollbar-thumb-gray-600 scrollbar-track-gray-100 dark:scrollbar-track-gray-800">
+                <div className="flex-1 overflow-y-auto min-h-0 scrollbar-thin scrollbar-thumb-[#0a1e46] dark:scrollbar-thumb-[#545454] scrollbar-track-[#e6f3fc] dark:scrollbar-track-[#545454]">
                   {isAnalyzing ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center space-y-6">
                         <div className="relative w-20 h-20 mx-auto">
-                          <div className="absolute inset-0 rounded-full border-4 border-red-100 dark:border-gray-700"></div>
-                          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-red-500 dark:border-t-red-400 animate-spin"></div>
-                          <div className="absolute inset-2 rounded-full bg-gradient-to-r from-red-400 to-rose-400 dark:from-red-500 dark:to-rose-500 animate-pulse opacity-20"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-[#e6f3fc] dark:border-[#545454]"></div>
+                          <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-[#0a1e46] dark:border-t-[#e6f3fc] animate-spin"></div>
+                          <div className="absolute inset-2 rounded-full bg-gradient-to-r from-[#0a1e46] to-[#e6f3fc] dark:from-[#0a1e46] dark:to-[#e6f3fc] animate-pulse opacity-20"></div>
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <Sparkles className="w-8 h-8 text-red-600 dark:text-red-400 animate-pulse" />
+                            <Sparkles className="w-8 h-8 text-[#0a1e46] dark:text-[#e6f3fc] animate-pulse" />
                           </div>
                         </div>
 
                         <div className="space-y-3">
                           <div className="flex items-center justify-center gap-2">
-                            <div className="w-2 h-2 bg-red-500 dark:bg-red-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-red-500 dark:bg-red-400 rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
-                            <div className="w-2 h-2 bg-red-500 dark:bg-red-400 rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
+                            <div className="w-2 h-2 bg-[#0a1e46] dark:bg-[#e6f3fc] rounded-full animate-bounce"></div>
+                            <div className="w-2 h-2 bg-[#0a1e46] dark:bg-[#e6f3fc] rounded-full animate-bounce" style={{ animationDelay: "0.1s" }}></div>
+                            <div className="w-2 h-2 bg-[#0a1e46] dark:bg-[#e6f3fc] rounded-full animate-bounce" style={{ animationDelay: "0.2s" }}></div>
                           </div>
-                          <p className="text-lg font-medium text-gray-700 dark:text-gray-200">AI Analyzing Road Conditions...</p>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">Detecting damage, garbage, obstacles & hazards</p>
+                          <p className="text-lg font-medium text-[#0a1e46] dark:text-[#e6f3fc]">AI Analyzing Road Conditions...</p>
+                          <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Detecting damage, garbage, obstacles & hazards</p>
                         </div>
                       </div>
                     </div>
                   ) : error ? (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center space-y-4 animate-in fade-in-50 slide-in-from-bottom-4 duration-500">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center">
-                          <AlertCircle className="w-8 h-8 text-red-500 dark:text-red-400" />
+                        <div className="w-16 h-16 mx-auto rounded-full bg-[#e6f3fc] dark:bg-[#0a1e46]/20 flex items-center justify-center">
+                          <AlertCircle className="w-8 h-8 text-[#0a1e46]" />
                         </div>
                         <div className="space-y-3">
-                          <p className="text-lg font-medium text-red-600 dark:text-red-400">Analysis Failed</p>
-                          <p className="text-sm text-gray-600 dark:text-gray-300 max-w-md mx-auto">{error}</p>
+                          <p className="text-lg font-medium text-[#0a1e46] dark:text-[#e6f3fc]">Analysis Failed</p>
+                          <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc] max-w-md mx-auto">{error}</p>
                           <Button
                             onClick={() => {
                               setError(null)
                               if (uploadedImage) analyzeImage()
                             }}
                             variant="outline"
-                            className="mt-4 border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="mt-4 border-[#0a1e46] dark:border-[#545454] text-[#0a1e46] dark:text-[#e6f3fc] hover:bg-[#e6f3fc] dark:hover:bg-[#0a1e46]/20"
                           >
                             Try Again
                           </Button>
@@ -441,36 +489,36 @@ export default function ImageAnalyzer() {
                         <div className="space-y-6">
                           {/* Overall Assessment Card */}
                           {parsedAnalysis.overall_assessment && (
-                            <div className="bg-white/90 dark:bg-gray-900/80 shadow-lg rounded-2xl p-6 border border-red-100 dark:border-red-800">
-                              <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4 flex items-center gap-2">
+                            <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-lg rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
+                              <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-4 flex items-center gap-2">
                                 <CheckCircle className="w-5 h-5" />
                                 Overall Road Assessment
                               </h3>
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-3">
                                   <div>
-                                    <span className="text-sm text-gray-500 dark:text-gray-400 block">Condition Rating</span>
+                                    <span className="text-sm text-[#0a1e46] dark:text-[#e6f3fc] block">Condition Rating</span>
                                     <span className={`text-lg font-semibold capitalize ${getConditionColor(parsedAnalysis.overall_assessment.condition_rating)}`}>
                                       {parsedAnalysis.overall_assessment.condition_rating}
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-sm text-gray-500 dark:text-gray-400 block">Priority Action</span>
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 capitalize">
+                                    <span className="text-sm text-[#0a1e46] dark:text-[#e6f3fc] block">Priority Action</span>
+                                    <span className="text-sm font-medium text-[#0a1e46] dark:text-[#e6f3fc] capitalize">
                                       {parsedAnalysis.overall_assessment.priority_action?.replace(/_/g, ' ')}
                                     </span>
                                   </div>
                                 </div>
                                 <div className="space-y-3">
                                   <div>
-                                    <span className="text-sm text-gray-500 dark:text-gray-400 block">Cleanup Time</span>
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    <span className="text-sm text-[#0a1e46] dark:text-[#e6f3fc] block">Cleanup Time</span>
+                                    <span className="text-sm font-medium text-[#0a1e46] dark:text-[#e6f3fc]">
                                       {parsedAnalysis.overall_assessment.estimated_cleanup_time || 'Not specified'}
                                     </span>
                                   </div>
                                   <div>
-                                    <span className="text-sm text-gray-500 dark:text-gray-400 block">Weather Impact</span>
-                                    <span className="text-sm font-medium text-gray-700 dark:text-gray-200 capitalize">
+                                    <span className="text-sm text-[#0a1e46] dark:text-[#e6f3fc] block">Weather Impact</span>
+                                    <span className="text-sm font-medium text-[#0a1e46] dark:text-[#e6f3fc] capitalize">
                                       {parsedAnalysis.overall_assessment.weather_impact || 'Not assessed'}
                                     </span>
                                   </div>
@@ -481,24 +529,24 @@ export default function ImageAnalyzer() {
 
                           {/* Quick Stats */}
                           <div className="grid grid-cols-3 gap-4">
-                            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 text-center border border-blue-200 dark:border-blue-800">
-                              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{parsedAnalysis.issue_count}</div>
-                              <div className="text-sm text-blue-700 dark:text-blue-300">Issues Found</div>
+                            <div className="bg-[#e6f3fc] dark:bg-[#0a1e46]/20 rounded-xl p-4 text-center border border-[#0a1e46] dark:border-[#545454]">
+                              <div className="text-2xl font-bold text-[#0a1e46] dark:text-[#e6f3fc]">{parsedAnalysis.issue_count}</div>
+                              <div className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Issues Found</div>
                             </div>
-                            <div className="bg-purple-50 dark:bg-purple-900/20 rounded-xl p-4 text-center border border-purple-200 dark:border-purple-800">
-                              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{parsedAnalysis.categories_detected?.length || 0}</div>
-                              <div className="text-sm text-purple-700 dark:text-purple-300">Categories</div>
+                            <div className="bg-[#e6f3fc] dark:bg-[#0a1e46]/20 rounded-xl p-4 text-center border border-[#0a1e46] dark:border-[#545454]">
+                              <div className="text-2xl font-bold text-[#0a1e46] dark:text-[#e6f3fc]">{parsedAnalysis.categories_detected?.length || 0}</div>
+                              <div className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Categories</div>
                             </div>
-                            <div className="bg-green-50 dark:bg-green-900/20 rounded-xl p-4 text-center border border-green-200 dark:border-green-800">
-                              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{parsedAnalysis.recommendations?.length || 0}</div>
-                              <div className="text-sm text-green-700 dark:text-green-300">Actions</div>
+                            <div className="bg-[#e6f3fc] dark:bg-[#0a1e46]/20 rounded-xl p-4 text-center border border-[#0a1e46] dark:border-[#545454]">
+                              <div className="text-2xl font-bold text-[#0a1e46] dark:text-[#e6f3fc]">{parsedAnalysis.recommendations?.length || 0}</div>
+                              <div className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">Actions</div>
                             </div>
                           </div>
 
                           {/* Categories Detected */}
                           {parsedAnalysis.categories_detected && parsedAnalysis.categories_detected.length > 0 && (
-                            <div className="bg-white/90 dark:bg-gray-900/80 shadow-lg rounded-2xl p-6 border border-red-100 dark:border-red-800">
-                              <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4 flex items-center gap-2">
+                            <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-lg rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
+                              <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-4 flex items-center gap-2">
                                 <Layers className="w-5 h-5" />
                                 Issue Categories Detected
                               </h3>
@@ -506,7 +554,7 @@ export default function ImageAnalyzer() {
                                 {parsedAnalysis.categories_detected.map((category, idx) => (
                                   <span
                                     key={idx}
-                                    className="inline-flex items-center gap-2 px-3 py-2 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200 rounded-lg text-sm font-medium capitalize border border-red-200 dark:border-red-700"
+                                    className="inline-flex items-center gap-2 px-3 py-2 bg-[#e6f3fc] text-[#0a1e46] dark:bg-[#0a1e46]/30 dark:text-[#e6f3fc] rounded-lg text-sm font-medium capitalize border border-[#0a1e46] dark:border-[#545454]"
                                   >
                                     {getCategoryIcon(category)}
                                     {category.replace(/_/g, ' ')}
@@ -518,8 +566,8 @@ export default function ImageAnalyzer() {
 
                           {/* Issues Details */}
                           {parsedAnalysis.issues && parsedAnalysis.issues.length > 0 && (
-                            <div className="bg-white/90 dark:bg-gray-900/80 shadow-lg rounded-2xl p-6 border border-red-100 dark:border-red-800">
-                              <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4 flex items-center gap-2">
+                            <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-lg rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
+                              <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-4 flex items-center gap-2">
                                 <AlertTriangle className="w-5 h-5" />
                                 Detailed Issue Analysis
                               </h3>
@@ -547,19 +595,19 @@ export default function ImageAnalyzer() {
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                                       <div className="space-y-2">
                                         <div className="flex items-center gap-2">
-                                          <MapPin className="w-4 h-4 text-gray-500" />
+                                          <MapPin className="w-4 h-4 text-[#0a1e46]" />
                                           <span className="font-medium">Location:</span>
                                           <span>{issue.location}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <Ruler className="w-4 h-4 text-gray-500" />
+                                          <Ruler className="w-4 h-4 text-[#0a1e46]" />
                                           <span className="font-medium">Size:</span>
                                           <span>{issue.size_description}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                          <AlertTriangle className="w-4 h-4 text-gray-500" />
+                                          <AlertTriangle className="w-4 h-4 text-[#0a1e46]" />
                                           <span className="font-medium">Blocking Traffic:</span>
-                                          <span className={issue.blocking_traffic ? 'text-red-600 font-semibold' : 'text-green-600'}>
+                                          <span className={issue.blocking_traffic ? 'text-[#0a1e46] font-semibold' : 'text-[#0a1e46]'}>
                                             {issue.blocking_traffic ? 'Yes' : 'No'}
                                           </span>
                                         </div>
@@ -567,12 +615,12 @@ export default function ImageAnalyzer() {
                                       <div className="space-y-2">
                                         <div>
                                           <span className="font-medium">Safety Risk:</span>
-                                          <p className="text-gray-700 dark:text-gray-300 mt-1">{issue.safety_risk}</p>
+                                          <p className="text-[#0a1e46] dark:text-[#e6f3fc] mt-1">{issue.safety_risk}</p>
                                         </div>
                                         {issue.additional_notes && (
                                           <div>
                                             <span className="font-medium">Notes:</span>
-                                            <p className="text-gray-700 dark:text-gray-300 mt-1">{issue.additional_notes}</p>
+                                            <p className="text-[#0a1e46] dark:text-[#e6f3fc] mt-1">{issue.additional_notes}</p>
                                           </div>
                                         )}
                                       </div>
@@ -585,18 +633,18 @@ export default function ImageAnalyzer() {
 
                           {/* Recommendations */}
                           {parsedAnalysis.recommendations && parsedAnalysis.recommendations.length > 0 && (
-                            <div className="bg-white/90 dark:bg-gray-900/80 shadow-lg rounded-2xl p-6 border border-red-100 dark:border-red-800">
-                              <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4 flex items-center gap-2">
+                            <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-lg rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
+                              <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-4 flex items-center gap-2">
                                 <CheckCircle className="w-5 h-5" />
                                 Recommended Actions
                               </h3>
                               <div className="space-y-3">
                                 {parsedAnalysis.recommendations.map((recommendation, idx) => (
-                                  <div key={idx} className="flex items-start gap-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
-                                    <div className="w-6 h-6 bg-green-500 text-white rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
+                                  <div key={idx} className="flex items-start gap-3 p-3 bg-[#e6f3fc] dark:bg-[#0a1e46]/20 rounded-lg border border-[#0a1e46] dark:border-[#545454]">
+                                    <div className="w-6 h-6 bg-[#0a1e46] text-[#ffffff] rounded-full flex items-center justify-center text-sm font-bold mt-0.5">
                                       {idx + 1}
                                     </div>
-                                    <p className="text-green-800 dark:text-green-200 font-medium">{recommendation}</p>
+                                    <p className="text-[#0a1e46] dark:text-[#e6f3fc] font-medium">{recommendation}</p>
                                   </div>
                                 ))}
                               </div>
@@ -605,13 +653,13 @@ export default function ImageAnalyzer() {
 
                           {/* Tags */}
                           {parsedAnalysis.tags && parsedAnalysis.tags.length > 0 && (
-                            <div className="bg-white/90 dark:bg-gray-900/80 shadow-lg rounded-2xl p-6 border border-red-100 dark:border-red-800">
-                              <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4">Issue Tags</h3>
+                            <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-lg rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
+                              <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-4">Issue Tags</h3>
                               <div className="flex flex-wrap gap-2">
                                 {parsedAnalysis.tags.map((tag, idx) => (
                                   <span
                                     key={idx}
-                                    className="inline-block bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200 rounded-full px-3 py-1 text-sm font-medium border border-gray-200 dark:border-gray-700"
+                                    className="inline-block bg-[#e6f3fc] text-[#0a1e46] dark:bg-[#545454] dark:text-[#e6f3fc] rounded-full px-3 py-1 text-sm font-medium border border-[#0a1e46] dark:border-[#545454]"
                                   >
                                     #{tag.replace(/\s+/g, '')}
                                   </span>
@@ -622,44 +670,44 @@ export default function ImageAnalyzer() {
 
                           {/* Summary and Detailed Description */}
                           {(parsedAnalysis.summary || parsedAnalysis.detailed_description) && (
-                            <div className="bg-white/90 dark:bg-gray-900/80 shadow-xl rounded-2xl p-6 border border-red-100 dark:border-red-800">
+                            <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-xl rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
                               {parsedAnalysis.summary && (
                                 <div className="mb-6">
-                                  <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-3">Executive Summary</h3>
-                                  <p className="text-gray-700 dark:text-gray-200 text-base leading-relaxed bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
+                                  <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-3">Executive Summary</h3>
+                                  <p className="text-[#0a1e46] dark:text-[#e6f3fc] text-base leading-relaxed bg-[#e6f3fc] dark:bg-[#0a1e46]/20 p-4 rounded-lg border border-[#0a1e46] dark:border-[#545454]">
                                     {parsedAnalysis.summary}
                                   </p>
                                 </div>
                               )}
                               {parsedAnalysis.detailed_description && (
                                 <div>
-                                  <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-3">Detailed Analysis</h3>
-                                  <div className="prose prose-red dark:prose-invert max-w-none">
+                                  <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-3">Detailed Analysis</h3>
+                                  <div className="prose prose-[#0a1e46] dark:prose-invert max-w-none">
                                     <ReactMarkdown
                                       components={{
                                         p: ({ children }) => (
-                                          <p className="mb-4 text-gray-700 dark:text-gray-200 leading-relaxed">{children}</p>
+                                          <p className="mb-4 text-[#0a1e46] dark:text-[#e6f3fc] leading-relaxed">{children}</p>
                                         ),
                                         strong: ({ children }) => (
-                                          <strong className="font-semibold text-gray-800 dark:text-gray-100">{children}</strong>
+                                          <strong className="font-semibold text-[#0a1e46] dark:text-[#e6f3fc]">{children}</strong>
                                         ),
                                         h1: ({ children }) => (
-                                          <h1 className="text-xl font-bold text-red-800 dark:text-red-200 mb-3 mt-6 first:mt-0">
+                                          <h1 className="text-xl font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-3 mt-6 first:mt-0">
                                             {children}
                                           </h1>
                                         ),
                                         h2: ({ children }) => (
-                                          <h2 className="text-lg font-semibold text-red-700 dark:text-red-300 mb-3 mt-5 first:mt-0">
+                                          <h2 className="text-lg font-semibold text-[#0a1e46] dark:text-[#e6f3fc] mb-3 mt-5 first:mt-0">
                                             {children}
                                           </h2>
                                         ),
                                         h3: ({ children }) => (
-                                          <h3 className="text-base font-semibold text-red-700 dark:text-red-300 mb-2 mt-4 first:mt-0">
+                                          <h3 className="text-base font-semibold text-[#0a1e46] dark:text-[#e6f3fc] mb-2 mt-4 first:mt-0">
                                             {children}
                                           </h3>
                                         ),
                                         ul: ({ children }) => (
-                                          <ul className="list-disc list-inside mb-4 space-y-1 text-gray-700 dark:text-gray-300">
+                                          <ul className="list-disc list-inside mb-4 space-y-1 text-[#0a1e46] dark:text-[#e6f3fc]">
                                             {children}
                                           </ul>
                                         ),
@@ -673,12 +721,13 @@ export default function ImageAnalyzer() {
                               )}
                             </div>
                           )}
+                       {renderUserContext((userContext as any))}
                         </div>
                       ) : (
                         // Fallback for unparsed analysis
-                        <div className="bg-white/90 dark:bg-gray-900/80 shadow-lg rounded-2xl p-6 border border-red-100 dark:border-red-800">
-                          <h3 className="text-lg font-bold text-red-700 dark:text-red-300 mb-4">Analysis Results</h3>
-                          <div className="prose prose-gray dark:prose-invert max-w-none">
+                        <div className="bg-[#ffffff]/90 dark:bg-[#545454]/80 shadow-lg rounded-2xl p-6 border border-[#e6f3fc] dark:border-[#545454]">
+                          <h3 className="text-lg font-bold text-[#0a1e46] dark:text-[#e6f3fc] mb-4">Analysis Results</h3>
+                          <div className="prose prose-[#0a1e46] dark:prose-invert max-w-none">
                             <ReactMarkdown>{analysis}</ReactMarkdown>
                           </div>
                         </div>
@@ -687,12 +736,12 @@ export default function ImageAnalyzer() {
                   ) : (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center space-y-4 opacity-60">
-                        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-red-100 to-rose-100 dark:from-red-900/50 dark:to-rose-900/50 flex items-center justify-center">
-                          <ImageIcon className="w-8 h-8 text-red-400 dark:text-red-500" />
+                        <div className="w-16 h-16 mx-auto rounded-full bg-gradient-to-r from-[#e6f3fc] to-[#0a1e46] dark:from-[#0a1e46]/50 dark:to-[#e6f3fc]/50 flex items-center justify-center">
+                          <ImageIcon className="w-8 h-8 text-[#0a1e46]" />
                         </div>
                         <div>
-                          <p className="text-lg font-medium text-gray-500 dark:text-gray-400">Ready to analyze road conditions</p>
-                          <p className="text-sm text-gray-400 dark:text-gray-500">
+                          <p className="text-lg font-medium text-[#0a1e46] dark:text-[#e6f3fc]">Ready to analyze road conditions</p>
+                          <p className="text-sm text-[#0a1e46] dark:text-[#e6f3fc]">
                             Upload an image to detect damage, garbage, obstacles & hazards
                           </p>
                         </div>
