@@ -276,7 +276,7 @@ export default function ImageAnalyzer() {
             <Image src="/logo.png" alt="Logo" width={48} height={48} className="rounded-lg" />
             <div className="inline-flex items-center gap-2">
               <h1 className="text-2xl font-bold text-[#0a1e46] dark:text-[#e6f3fc]">
-                Complainr Routing
+                Complainer Routing
               </h1>
             </div>
           </div>
